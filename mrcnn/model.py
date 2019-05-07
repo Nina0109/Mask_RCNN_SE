@@ -1232,8 +1232,9 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
             image = np.fliplr(image)
             mask = np.fliplr(mask)
 
-    id_mask = np.ones_like(class_ids.copy)
-    if aug_for_cls is not None:
+    id_mask = np.ones_like(class_ids)
+    aug_rate = np.random.random()
+    if (aug_for_cls is not None) and aug_rate>0.3:
         chosen_id = np.random.choice(aug_for_cls)
         for i,id in enumerate(class_ids):
             if(id!=chosen_id):
@@ -1241,6 +1242,7 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
 
         _idx = id_mask > 0
         chosen_mask = mask[:,:,_idx]
+        chosen_cls = chosen_mask.shape[2]*[chosen_id]
         bboxes = utils.extract_bboxes(chosen_mask)
         h,w = image.shape[0:2]
         cls_chosen_mask = np.zeros_like(image)
@@ -1248,6 +1250,9 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
             y1, x1, y2, x2 = bbox
             cls_chosen_mask[y1:y2,x1:x2,:] = 1
         image = image*cls_chosen_mask
+
+        # import cv2
+        # cv2.imwrite('tttttest.jpg',image)
 
 
 
@@ -1309,6 +1314,9 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
     # Image meta data
     image_meta = compose_image_meta(image_id, original_shape, image.shape,
                                     window, scale, active_class_ids)
+
+    if (aug_for_cls is not None) and aug_rate>0.3:
+        class_ids = chosen_cls
 
     return image, image_meta, class_ids, bbox, mask
 
